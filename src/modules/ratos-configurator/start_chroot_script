@@ -44,7 +44,7 @@ chown pi:pi ${RATOS_CONFIGURATOR_DIR}/.env.local
 
 # ── Install npm dependencies ──────────────────────────────────
 cd ${RATOS_CONFIGURATOR_DIR}
-sudo -u pi npm ci --prefer-offline
+sudo -u pi npm install --no-fund --no-audit
 
 # ── Build the Next.js production app ─────────────────────────
 sudo -u pi npm run build
