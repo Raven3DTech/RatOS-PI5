@@ -48,7 +48,7 @@ jobs:
             -O base-image-cache/raspios_lite_arm64_latest.img.xz
           echo "Base image downloaded"
 
-      - name: Copy base image into build tree
+      - name: Stage base image into build tree
         run: |
           mkdir -p KlipperPi/src/image
           cp base-image-cache/raspios_lite_arm64_latest.img.xz \
@@ -58,17 +58,16 @@ jobs:
       - name: Update CustomPiOS paths
         run: |
           cd KlipperPi/src
-          ../../CustomPiOS/src/update-custompios-paths
-
-      - name: Verify compression config
-        run: |
-          grep COMPRESS_IMAGE KlipperPi/src/config
+          bash $GITHUB_WORKSPACE/CustomPiOS/src/update-custompios-paths
+          echo "CustomPiOS paths updated"
+          ls -la
 
       - name: Build image
         run: |
           sudo modprobe loop
           cd KlipperPi/src
-          sudo bash -x ./build_dist
+          ls -la
+          sudo bash -x build_dist
 
       - name: Find and rename output image
         id: rename
@@ -81,7 +80,7 @@ jobs:
           echo "VERSION=${VERSION}" >> "$GITHUB_OUTPUT"
           IMG=$(find "${WORKSPACE}" -maxdepth 1 \( -name "*.img" -o -name "*.img.xz" \) | head -n1)
           if [ -z "${IMG}" ]; then
-            echo "No image found" && exit 1
+            echo "No image found" && ls -la "${WORKSPACE}" && exit 1
           fi
           EXT="${IMG##*.img}"
           DEST="${WORKSPACE}/KlipperPi-${VERSION}-arm64.img${EXT}"
