@@ -1,6 +1,6 @@
 #!/bin/bash
 # ============================================================
-# KlipperPi - Configurator Module Install Script
+# KlipperPi — Configurator Module Install Script
 # ============================================================
 set -ex
 
@@ -9,7 +9,7 @@ install_cleanup_trap
 
 # Variables are automatically exported by CustomPiOS
 
-# -- Node.js 20 LTS -------------------------------------------
+# ── Node.js 20 LTS ───────────────────────────────────────────
 curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
 apt-get install -y --no-install-recommends \
     nodejs \
@@ -19,7 +19,7 @@ apt-get install -y --no-install-recommends \
 node --version
 npm --version
 
-# -- Clone Configurator ---------------------------------------
+# ── Clone Configurator ───────────────────────────────────────
 sudo -u pi git clone \
     ${RATOS_CONFIGURATOR_REPO} \
     ${RATOS_CONFIGURATOR_DIR}
@@ -27,44 +27,44 @@ sudo -u pi git clone \
 cd ${RATOS_CONFIGURATOR_DIR}
 sudo -u pi git checkout ${RATOS_CONFIGURATOR_BRANCH}
 
-# -- Fix hardcoded paths that assume Raspberry Pi OS defaults -
+# ── Fix hardcoded paths that assume Raspberry Pi OS defaults ─
 # The configurator has bash scripts that hardcode /home/pi.
 # Since we use BASE_USER=pi this is fine, but we patch any
 # remaining hardcoded strings for robustness.
 find ${RATOS_CONFIGURATOR_DIR}/scripts -name "*.sh" \
     -exec sed -i 's|/home/pi|/home/pi|g' {} \; 2>/dev/null || true
 
-# -- Create RatOS config subdirectory 
+# ── Create RatOS config subdirectory ─────────────────────────
 sudo -u pi mkdir -p ${RATOS_CONFIG_PATH}
 
-# -- Write .env.local -----------------------------------------
+# ── Write .env.local ─────────────────────────────────────────
 # Move the environment file to the actual Next.js app directory (src)
 cp /filesystem/home/pi/ratos-configurator/.env.local \
    ${RATOS_CONFIGURATOR_DIR}/src/.env.local
 chown pi:pi ${RATOS_CONFIGURATOR_DIR}/src/.env.local
 
-# -- Install pnpm and dependencies ----------------------------
-sudo -u pi npm install -g pnpm
+# ── Install pnpm and dependencies ────────────────────────────
+npm install -g pnpm
 cd ${RATOS_CONFIGURATOR_DIR}/src
 sudo -u pi pnpm install
 
-# -- Build the Next.js production app -------------------------
+# ── Build the Next.js production app ─────────────────────────
 sudo -u pi pnpm run build
 
-# -- Sudo rules so configurator can flash boards --------------
+# ── Sudo rules so configurator can flash boards ───────────────
 cp /filesystem/etc/sudoers.d/klipperpi-flash \
    /etc/sudoers.d/klipperpi-flash
 chmod 440 /etc/sudoers.d/klipperpi-flash
 visudo -c -f /etc/sudoers.d/klipperpi-flash
 
-# -- Scripts directory -----------------------------------------
+# ── Scripts directory ─────────────────────────────────────────
 sudo -u pi mkdir -p /home/pi/scripts
 cp /filesystem/home/pi/scripts/klipperpi-firstboot.sh \
    /home/pi/scripts/klipperpi-firstboot.sh
 chmod +x /home/pi/scripts/klipperpi-firstboot.sh
 chown pi:pi /home/pi/scripts/klipperpi-firstboot.sh
 
-# -- systemd services ------------------------------------------
+# ── systemd services ──────────────────────────────────────────
 cp /filesystem/etc/systemd/system/ratos-configurator.service \
    /etc/systemd/system/ratos-configurator.service
 
@@ -75,4 +75,4 @@ systemctl_if_exists enable ratos-configurator
 systemctl_if_exists enable klipperpi-firstboot
 systemctl_if_exists enable avahi-daemon
 
-echo "Success: Configurator module installed"
+echo "✅ Configurator module installed"
