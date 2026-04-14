@@ -9,7 +9,7 @@ source /common.sh
 install_cleanup_trap
 
 # ── Source module config ─────────────────────────────────────
-source /tmp/klipperpi_config/klipper/config
+# Variables are automatically exported by CustomPiOS
 
 # ── System dependencies ──────────────────────────────────────
 apt-get update --allow-releaseinfo-change
