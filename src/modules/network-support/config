@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+# Ensure WiFi/Ethernet userland matches Raspberry Pi OS Bookworm (NetworkManager + WPA + firmware).
+:

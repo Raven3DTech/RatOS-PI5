@@ -181,6 +181,24 @@ sudo raspi-config
 
 ---
 
+## Troubleshooting: no Ethernet lights / no network (Pi 5)
+
+The image recipe includes a **`network-support`** module that installs **NetworkManager**, **wpasupplicant**, **Broadcom WiFi firmware** (`firmware-brcm80211`), **rfkill**, and related tools, and **masks ModemManager** (it can grab USB-serial devices used by printer boards).
+
+**Important:** On Raspberry Pi OS **Bookworm**, the built-in Ethernet interface is often named **`end0`**, not `eth0`. WiFi is usually **`wlan0`**. Check link status with:
+
+```bash
+nmcli device status
+ip -br link
+```
+
+1. **RJ45 LEDs off** — If the **board’s green activity LED** is also not blinking, the OS may not be booting (bad flash, wrong image, power, or storage). HDMI + keyboard helps confirm boot. Link LEDs can stay dark if **no cable** is plugged in.
+2. **Cable / switch / router** — Try another cable, another switch port, and confirm DHCP is offered on the LAN.
+3. **First boot** — Inspect `cat /var/log/klipperpi-firstboot.log` and `journalctl -u NetworkManager -b --no-pager` once you have local console or serial.
+4. **WiFi** — Not preconfigured: use **Raspberry Pi Imager** “Wireless LAN” options when writing the image, or run `sudo nmtui` from a console after Ethernet works once.
+
+---
+
 ## Default Credentials
 
 | Service | URL | User | Password |
@@ -298,6 +316,7 @@ Pi 5 (Bookworm 64-bit arm64)
 ├── systemd services
 │   ├── klipper.service          :  klippy.py → /tmp/klippy_uds
 │   ├── moonraker.service        :  moonraker.py → :7125
+│   ├── NetworkManager.service   :  Ethernet + WiFi (Bookworm)
 │   ├── nginx.service            :  → :80 (Mainsail) + proxy :7125
 │   ├── ratos-configurator.service: next start → :3000
 │   ├── crowsnest.service         :  webcam streaming
