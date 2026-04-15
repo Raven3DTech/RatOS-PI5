@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+# [klipper_linear_movement_analysis](https://github.com/worksasintended/klipper_linear_movement_analysis)
+# RatOS wraps this with `ratos extensions register`; KlipperPi uses upstream install.sh semantics (symlink + venv pip).
+[ -n "$LINEAR_MOVEMENT_ANALYSIS_SHIP" ] || LINEAR_MOVEMENT_ANALYSIS_SHIP="https://github.com/worksasintended/klipper_linear_movement_analysis.git"
+[ -n "$LINEAR_MOVEMENT_ANALYSIS_BRANCH" ] || LINEAR_MOVEMENT_ANALYSIS_BRANCH="main"
+[ -n "$LINEAR_MOVEMENT_ANALYSIS_DIR" ] || LINEAR_MOVEMENT_ANALYSIS_DIR="/home/${BASE_USER}/klipper_linear_movement_analysis"
+:

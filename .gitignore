@@ -24,3 +24,5 @@ Thumbs.db
 .klipper-ref/
 .timelapse-ref/
 .ratos-config-ref/
+.ratos-lma-ref/
+.lma-upstream/

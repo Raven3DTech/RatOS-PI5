@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+# Linear movement / vibration analysis Klipper extra (same outcome as RatOS module, no `ratos` CLI).
+set -ex
+
+source /common.sh
+install_cleanup_trap
+
+LMA_DIR="${LINEAR_MOVEMENT_ANALYSIS_DIR}"
+EXT_TARGET="/home/${BASE_USER}/klipper/klippy/extras"
+SCRIPT="linear_movement_vibrations.py"
+
+echo_green "Installing klipper_linear_movement_analysis ..."
+
+pushd "/home/${BASE_USER}" &>/dev/null
+if [[ -d "${LMA_DIR}/.git" ]]; then
+    echo_green "Repo already present, skipping clone"
+else
+    rm -rf "${LMA_DIR}"
+    sudo -u "${BASE_USER}" git clone -b "${LINEAR_MOVEMENT_ANALYSIS_BRANCH}" --depth 1 \
+        "${LINEAR_MOVEMENT_ANALYSIS_SHIP}" "${LMA_DIR}"
+fi
+popd &>/dev/null
+
+sudo -u "${BASE_USER}" rm -f "${EXT_TARGET}/${SCRIPT}"
+sudo -u "${BASE_USER}" ln -sf "${LMA_DIR}/${SCRIPT}" "${EXT_TARGET}/${SCRIPT}"
+
+sudo -u "${BASE_USER}" "/home/${BASE_USER}/klippy-env/bin/pip" install -r "${LMA_DIR}/requirements.txt"
+
+echo_green "klipper_linear_movement_analysis done (enable in printer.cfg per upstream README)"
