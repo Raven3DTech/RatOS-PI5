@@ -29,14 +29,19 @@ rm -rf "${KS_DIR}"
 git clone -b "${KLIPPERSCREEN_BRANCH}" --depth 1 "${KLIPPERSCREEN_SHIP}" "${KS_DIR}"
 
 apt-get update -qq
+# Core X stack + everything pip needs to build PyGObject / cairo / python-mpv (Bookworm arm64).
+# libgtk-3-dev + gobject-introspection are required for PyGObject wheels/source builds; without them
+# `pip install -r KlipperScreen-requirements.txt` often fails in CI chroots.
 apt-get install -y -o Dpkg::Options::=--force-confdef -o Dpkg::Options::=--force-confold \
     xinit xinput x11-xserver-utils \
     xserver-xorg-input-evdev xserver-xorg-input-libinput \
     xserver-xorg-legacy xserver-xorg-video-fbdev \
     libgirepository1.0-dev gcc libcairo2-dev pkg-config python3-dev \
-    gir1.2-gtk-3.0 librsvg2-common libopenjp2-7 libdbus-glib-1-dev autoconf python3-venv \
-    fonts-nanum fonts-ipafont libmpv-dev \
-    build-essential cmake libsystemd-dev
+    libffi-dev libgtk-3-dev gobject-introspection gir1.2-gtk-3.0 \
+    librsvg2-common libopenjp2-7 libdbus-glib-1-dev libdbus-1-dev autoconf python3-venv \
+    build-essential cmake libsystemd-dev libmpv-dev
+# Optional fonts — do not fail the image if a metapackage name differs between ports.
+apt-get install -y fonts-nanum fonts-ipafont 2>/dev/null || apt-get install -y fonts-nanum || true
 
 # Match upstream update_x11()
 mkdir -p /etc/X11
@@ -47,10 +52,14 @@ EOF
 
 rm -rf "${KSENV}"
 python3 -m venv "${KSENV}"
-# aarch64 Bookworm image (CI / Pi 5): use stock PyPI; armv7l would use piwheels upstream.
-if ! "${KSENV}/bin/pip" install --disable-pip-version-check -r "${REQ}"; then
-    "${KSENV}/bin/pip" install --disable-pip-version-check --upgrade pip setuptools wheel
-    "${KSENV}/bin/pip" install --disable-pip-version-check -r "${REQ}" --prefer-binary
+# Match upstream: piwheels speeds up ARM builds; aarch64 gets manylinux wheels too.
+PIWHEELS=(--extra-index-url https://www.piwheels.org/simple)
+if [[ "$(uname -m)" != arm* ]] && [[ "$(uname -m)" != aarch* ]]; then
+    PIWHEELS=()
+fi
+if ! "${KSENV}/bin/pip" install --disable-pip-version-check "${PIWHEELS[@]}" -r "${REQ}"; then
+    "${KSENV}/bin/pip" install --disable-pip-version-check "${PIWHEELS[@]}" --upgrade pip setuptools wheel
+    "${KSENV}/bin/pip" install --disable-pip-version-check "${PIWHEELS[@]}" -r "${REQ}" --prefer-binary
 fi
 
 groupadd -f klipperscreen
