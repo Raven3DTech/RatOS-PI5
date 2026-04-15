@@ -316,7 +316,6 @@ Pi 5 (Bookworm 64-bit arm64)
 │   ├── sonar/                   WiFi keepalive (if module enabled)
 │   ├── KlipperScreen/           touchscreen UI (if module enabled)
 │   ├── moonraker-timelapse/     timelapse plugin source (if module enabled)
-│   ├── klipper_linear_movement_analysis/  vibration analysis Klipper extra (if module enabled)
 │   ├── scripts/                 firstboot + helper scripts
 │   └── printer_data/
 │       ├── config/              printer.cfg, moonraker.conf, RatOS/

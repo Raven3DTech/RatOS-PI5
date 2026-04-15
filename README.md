@@ -131,7 +131,6 @@ Each component can be updated independently via Moonraker's update manager
 | Mainsail | https://github.com/mainsail-crew/mainsail |
 | Configurator | https://github.com/Rat-OS/RatOS-configurator |
 | RatOS-configuration | https://github.com/Rat-OS/RatOS-configuration (branch v2.1.x, path ~/printer_data/config/RatOS) |
-| Linear movement analysis | https://github.com/worksasintended/klipper_linear_movement_analysis (same as [RatOS module](https://github.com/Rat-OS/RatOS/tree/v2.1.x/src/modules/linear_movement_analysis), installed without `ratos` CLI) |
 | Crowsnest | https://github.com/mainsail-crew/crowsnest |
 | Sonar | https://github.com/mainsail-crew/sonar |
 | moonraker-timelapse | https://github.com/mainsail-crew/moonraker-timelapse |
