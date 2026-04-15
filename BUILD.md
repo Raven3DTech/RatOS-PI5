@@ -145,7 +145,19 @@ The image includes [RatOS-configuration](https://github.com/Rat-OS/RatOS-configu
 | **Moonraker Update Manager** | `[update_manager ratos_configuration]` tracks the Git repo **without** `install_script`, so updates do not automatically run `ratos-install.sh` (avoids overwriting the KlipperPi placeholder `printer.cfg` on every update). |
 | **Upstream notice** | RatOS documents that development is moving toward [RatOS-configurator](https://github.com/Rat-OS/RatOS-configurator); the configuration tree remains the modular Klipper config source. |
 | **Raspberry Pi 5** | [RatOS-configuration](https://github.com/Rat-OS/RatOS-configuration) does **not** gate on a specific Pi model. Boards, macros, and `boards/rpi/firmware.config` are plain Klipper Kconfig snippets; the RPi “MCU” preset is the **Linux process** build, which is valid on **Pi 4 and Pi 5** under **64-bit** Pi OS. |
-| **`ratos-update.sh` (if you run it)** | Two Bookworm / KlipperPi mismatches to be aware of: (1) `fix_klippy_env_ownership` looks under `klippy-env/lib/python3.9/` — Bookworm images typically use **Python 3.11** in the venv, so that check usually does nothing (harmless). (2) `ensure_node_18` tries to standardise on **Node 18**, while KlipperPi installs **Node 20** for RatOS Configurator — avoid running the full upstream update script blindly, or edit/skip the Node block if you maintain Node 20. |
+| **`ratos-update.sh` (if you run it)** | The image build **patches** `~/printer_data/config/RatOS/scripts/ratos-update.sh` after clone: `python3.9` in the matplotlib path is replaced with the **actual** `python3.*` folder under `~/klippy-env/lib/` (Bookworm is usually 3.11), and the **`ensure_node_18` line is commented out** so Node **20** from KlipperPi is not downgraded to Node 18. If Moonraker updates RatOS-configuration and resets that file, re-apply or re-flash from a refreshed image build. |
+
+### Raspberry Pi 5 — “full compatibility” checklist
+
+What “Pi 5 ready” means in practice is **hardware + OS + stack + validation**. KlipperPi already targets 64-bit Pi OS Lite Bookworm (the family Raspberry Pi tests on Pi 5). To tighten further:
+
+1. **Power / thermals** — Use a **5 V** supply appropriate for load (official **5 A** unit if you use many USB devices or NVMe). Adequate cooling avoids throttling during long builds or camera encode.
+2. **Bootloader / firmware** — Keep **EEPROM / bootloader** current (Raspberry Pi Imager advanced menu, or `raspi-eeprom-update` on the Pi). Pi 5 gains fixes for USB, PCIe, and power sequencing over time.
+3. **Base image** — Continue using **`raspios_lite_arm64_latest`** so the rootfs matches Pi 5 expectations.
+4. **`/boot/firmware/config.txt`** — Only add **dtoverlay=** lines you need (cameras, HATs, PCIe). Wrong overlays are a common source of “works on Pi 4, fails on Pi 5” reports; headless Klipper images usually need **no** extra overlays.
+5. **Klipper / printer MCU** — The main board is independent of Pi generation; **`klipper-mcu`** on the Pi uses RatOS `boards/rpi/firmware.config` when present (Linux-process style), which is valid on Pi 5 under 64-bit OS.
+6. **Full RatOS wiring** — Templates, udev, and `ratos extensions` still require running **`ratos-install.sh` as user `pi`** when the Configurator API is available (see table above); the image does not run that automatically.
+7. **Proof** — **Smoke-test on a real Pi 5**: Ethernet or WiFi, Mainsail, Configurator, one serial device, optional crowsnest/timelapse. Automated CI does not replace hardware validation.
 
 ---
 

@@ -16,7 +16,7 @@
 - Raspberry Pi 4 ✅
 
 ### Features
-- [RatOS-configuration](https://github.com/Rat-OS/RatOS-configuration) `v2.1.x` preinstalled under `~/printer_data/config/RatOS` (see **BUILD.md** for socket / `ratos-install.sh` compatibility)
+- [RatOS-configuration](https://github.com/Rat-OS/RatOS-configuration) `v2.1.x` preinstalled under `~/printer_data/config/RatOS`; build patches `ratos-update.sh` for Bookworm Python venv path and skips forced Node 18 (see **BUILD.md**)
 - Optional extras (from [RatOS v2.1.x modules](https://github.com/Rat-OS/RatOS/tree/v2.1.x/src/modules), adapted for KlipperPi): **crowsnest**, **sonar**, **moonraker-timelapse**, **KlipperScreen**, **dfu-util** (source build), **klipper-mcu** (uses `boards/rpi/firmware.config` from RatOS-configuration when present; else Linux-process preset)
 - Full Klipper + Moonraker + Mainsail stack
 - Configurator accessible from Mainsail sidebar
