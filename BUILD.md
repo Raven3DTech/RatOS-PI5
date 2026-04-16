@@ -38,7 +38,7 @@ The **`hotspot`** module follows [Rat-OS/RatOS `v2.1.x` `hotspot`](https://githu
 
 - **NetworkManager:** Pi OS Lite **Bookworm+** often uses **NetworkManager** for Wi‑Fi. `autohotspotN` was written around **wpa_supplicant + dhcpcd**. If the AP does not come up or Wi‑Fi flaps, use **Ethernet** for first setup, or plan a **NM-native** hotspot later—this port **does not blank `/etc/network/interfaces` when `network-manager` is installed** (unlike stock RatOS) to avoid breaking NM-managed installs.
 - **Ethernet interface:** many Pis use **`end0`** instead of **`eth0`**; the module **patches `autohotspotN`** when `end0` exists.
-- Defaults: SSID **`KlipperPi`**, WPA passphrase **`raspberry`**, channel **`6`** — override via `HOTSPOT_NAME` / `HOTSPOT_PASSWORD` / `HOTSPOT_CHANNEL` in `src/modules/hotspot/config` or `config.local`.
+- Defaults: SSID **`KlipperPi5`**, WPA passphrase **`raspberry`**, channel **`6`** — override via `HOTSPOT_NAME` / `HOTSPOT_PASSWORD` / `HOTSPOT_CHANNEL` in `src/modules/hotspot/config` or `config.local`.
 
 ---
 
