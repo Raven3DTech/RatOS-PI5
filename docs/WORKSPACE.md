@@ -46,8 +46,8 @@ git clone https://github.com/Raven3DTech/R3DTOS-PI5.git R3DTOS-PI5
 
 ## GitHub Actions: remove failed runs (keep green)
 
-1. Install [GitHub CLI](https://cli.github.com/) and run **`gh auth login`** once (or `& "$env:ProgramFiles\GitHub CLI\gh.exe" auth login` on Windows).
-2. Preview: **`pwsh -File scripts/delete-failed-github-runs.ps1 -WhatIf`**
-3. Delete: **`pwsh -File scripts/delete-failed-github-runs.ps1`**
+1. Install [GitHub CLI](https://cli.github.com/) and run **`gh auth login`** as a user with **admin** rights on **`Raven3DTech/R3DTOS-PI5`** (deleting workflow runs returns **403** for non-admins).
+2. Preview: **`powershell -File scripts/delete-failed-github-runs.ps1 -WhatIf`**
+3. Delete: **`powershell -File scripts/delete-failed-github-runs.ps1`**
 
-Deletes conclusions **`failure`**, **`startup_failure`**, and **`timed_out`** for **`Raven3DTech/R3DTOS-PI5`** (override with **`-Repo owner/name`**). Successful runs are untouched.
+Deletes **`failure`**, **`startup_failure`**, and **`timed_out`** runs (override with **`-Repo owner/name`**). Successful runs are untouched.

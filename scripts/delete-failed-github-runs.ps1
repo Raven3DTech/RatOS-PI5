@@ -4,11 +4,9 @@
   Delete failed GitHub Actions workflow runs (keeps successful / green runs).
 
 .DESCRIPTION
-  Uses GitHub CLI. Install from https://cli.github.com/ then run once:
-    & "$env:ProgramFiles\GitHub CLI\gh.exe" auth login
-
+  Uses GitHub CLI. Run once: gh auth login
   Default repo: Raven3DTech/R3DTOS-PI5
-  Deletes runs with conclusion: failure, startup_failure, timed_out
+  Deletes runs with status filter: failure, startup_failure, timed_out
 #>
 param(
   [string]$Repo = "Raven3DTech/R3DTOS-PI5",
@@ -31,29 +29,41 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 $bad = @("failure", "startup_failure", "timed_out")
-$all = @()
+$idSet = [System.Collections.Generic.HashSet[string]]::new()
 
 foreach ($s in $bad) {
-  $json = & $GH run list -R $Repo -L $Limit -s $s --json databaseId,conclusion,displayTitle,workflowName,createdAt 2>&1
+  $lines = & $GH run list -R $Repo -L $Limit -s $s --json databaseId --jq '.[].databaseId'
   if ($LASTEXITCODE -ne 0) { continue }
-  $runs = @($json | ConvertFrom-Json)
-  if ($runs.Count -gt 0) { $all += $runs }
+  foreach ($line in $lines) {
+    $t = $line.Trim()
+    if ($t) { [void]$idSet.Add($t) }
+  }
 }
 
-$ids = $all | Sort-Object databaseId -Unique
-if (-not $ids -or $ids.Count -eq 0) {
+if ($idSet.Count -eq 0) {
   Write-Host "No failed runs found (failure / startup_failure / timed_out) in last $Limit per status."
   exit 0
 }
 
-Write-Host "Found $($ids.Count) failed run(s) to remove."
-foreach ($r in $ids) {
-  $line = "$($r.workflowName) #$($r.databaseId) $($r.displayTitle)"
+Write-Host "Found $($idSet.Count) failed run(s) to remove."
+$blocked = $false
+foreach ($id in $idSet) {
   if ($WhatIf) {
-    Write-Host "[WhatIf] Would delete: $line"
+    Write-Host "[WhatIf] Would delete run $id"
     continue
   }
-  Write-Host "Deleting: $line"
-  & $GH run delete $r.databaseId -R $Repo
+  Write-Host "Deleting run $id"
+  $out = & $GH run delete $id -R $Repo 2>&1
+  if ($out) { Write-Host $out }
+  if ($LASTEXITCODE -ne 0 -or "$out" -match '\b403\b') {
+    if (-not $blocked) {
+      Write-Warning "Delete blocked (HTTP 403 = need **admin** on the repo). Run ``gh auth login`` as the org/repo owner, then re-run this script."
+      $blocked = $true
+    }
+    break
+  }
+}
+if ($blocked) {
+  exit 1
 }
 Write-Host "Done."
