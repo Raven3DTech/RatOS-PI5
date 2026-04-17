@@ -12,7 +12,7 @@ CustomPiOS expects to live **next to** this repository so the Makefile’s defau
 └── R3DTOS-PI5/          ← this repo (recommended directory name)
 ```
 
-If you cloned GitHub’s **`KlipperPi5`** repo but kept the folder name **`KlipperPi`**, either rename the folder to **`R3DTOS-PI5`** when nothing holds a lock on it, or keep **`../CustomPiOS`** correct relative to that folder. CustomPiOS names the output **`<parent-of-src>.img`**, so the parent folder name should be **`R3DTOS-PI5`** if you want **`R3DTOS-PI5.img`**.
+If your local checkout still uses the folder name **`KlipperPi`** (legacy), rename it to **`R3DTOS-PI5`** when nothing holds a lock, or use the **junction** below. CustomPiOS names the output **`<parent-of-src>.img`**, so the parent folder name should be **`R3DTOS-PI5`** if you want **`R3DTOS-PI5.img`**.
 
 ## Windows: directory junction (optional)
 
@@ -34,12 +34,10 @@ Then use `cd R3DTOS-PI5/src` for builds; it is the same working tree.
 
 The canonical remote is currently:
 
-`https://github.com/Raven3DTech/KlipperPi5.git`
+`https://github.com/Raven3DTech/R3DTOS-PI5.git`
 
 Clone with an explicit directory name so the image filename matches docs:
 
 ```bash
-git clone https://github.com/Raven3DTech/KlipperPi5.git R3DTOS-PI5
+git clone https://github.com/Raven3DTech/R3DTOS-PI5.git R3DTOS-PI5
 ```
-
-If the GitHub repository is renamed to **`R3DTOS-PI5`**, switch the URL accordingly.

@@ -40,7 +40,7 @@ sudo apt-get install -y \
 Use the folder name **`R3DTOS-PI5`** so the CustomPiOS output image is named **`R3DTOS-PI5.img`** (the name matches the parent directory of `src/`).
 
 ```bash
-git clone https://github.com/Raven3DTech/KlipperPi5.git R3DTOS-PI5
+git clone https://github.com/Raven3DTech/R3DTOS-PI5.git R3DTOS-PI5
 git clone https://github.com/guysoft/CustomPiOS.git
 ```
 
