@@ -143,7 +143,7 @@ Match the [RatOS 2.1.x installation](https://os.ratrig.com/docs/installation/) f
 2. **Wi‑Fi path:** join hotspot **`r3dtospi5`** / **`raspberry`**, open **`http://192.168.50.1/configure`**. **Ethernet:** open **`http://r3dtospi5.local/configure`** (hostname may get a suffix after first boot).
 3. Complete Wi‑Fi + hostname; reboot onto your LAN when prompted (upstream pattern).
 4. Open **`http://<hostname>.local`** or **`http://<hostname>.local/config`** for **Mainsail** (port 80; `/config` redirects to `/` like RatOS docs). Run **Update Manager** before continuing the wizard.
-5. Continue in **Configurator** at **`http://<hostname>.local/configure`** (or the Mainsail sidebar link) for board detection and hardware steps.
+5. Continue in **Configurator** at **`http://<hostname>.local/configure`** for board detection and hardware steps.
 
 > **Tip:** nginx proxies **`/configure`** to Next on **:3000** (stock RatOS URL shape). Direct **`http://<host>:3000/configure`** still works. If `.local` fails, use the Pi’s IP from your router.
 
@@ -327,17 +327,14 @@ cat ~/printer_data/logs/moonraker.log
 sudo systemctl status klipper
 cat ~/printer_data/logs/klippy.log
 ```
-> Klipper will fail to start if `printer.cfg` has no `[mcu]` section.
-> This is expected until you run the Configurator wizard.
+> The shipped **`printer.cfg`** includes **`[mcu]`** with **`serial: /tmp/klipper_host_mcu`** (host MCU) so Klipper starts before the Configurator runs. If Klipper still fails, check **`klipper-mcu.service`** and **`~/printer_data/logs/klippy.log`**.
 
-### Configurator not appearing in sidebar
+### Configurator link in Mainsail sidebar
+Moonraker **0.10+** no longer uses **`[panel_custom …]`** in **`moonraker.conf`** for this stack. Open the Configurator at **`http://<hostname>.local/configure`** (or **`http://<IP>/configure`**) from the address bar or a browser bookmark.
+
 ```bash
 sudo systemctl status ratos-configurator
 journalctl -fu ratos-configurator
-```
-Check Moonraker has loaded the panel config:
-```bash
-curl http://localhost:7125/server/info | python3 -m json.tool | grep -i panel
 ```
 
 ### Configurator can't flash board
