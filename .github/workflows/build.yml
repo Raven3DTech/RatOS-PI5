@@ -71,14 +71,25 @@ jobs:
             -O base-image-cache/raspios_lite_arm64_latest.img.xz
           echo "Downloaded: $(ls -lh base-image-cache/)"
 
+      # CustomPiOS `base` module sources `modules/base/config`, which overwrites BASE_ZIP_IMG when unset.
+      # `sudo VAR=… cmd` does not reliably pass VAR into nested config on all runners; keep a copy under
+      # `src/image/` (same as `make download-image`) and use `sudo -E` so BASE_ZIP_IMG survives.
+      - name: Stage base image into distro image dir
+        run: |
+          mkdir -p "${GITHUB_WORKSPACE}/R3DTOS-PI5/src/image"
+          SRC="${GITHUB_WORKSPACE}/base-image-cache/raspios_lite_arm64_latest.img.xz"
+          DST="${GITHUB_WORKSPACE}/R3DTOS-PI5/src/image/raspios_lite_arm64_latest.img.xz"
+          test -f "${SRC}"
+          cp -f "${SRC}" "${DST}"
+          ls -lh "${DST}"
+
       - name: Build image
         run: |
           sudo modprobe loop
-          sudo \
-            DIST_PATH=$GITHUB_WORKSPACE/R3DTOS-PI5/src \
-            CUSTOM_PI_OS_PATH=$GITHUB_WORKSPACE/CustomPiOS/src \
-            BASE_ZIP_IMG=$GITHUB_WORKSPACE/base-image-cache/raspios_lite_arm64_latest.img.xz \
-            bash $GITHUB_WORKSPACE/CustomPiOS/src/build
+          export DIST_PATH="${GITHUB_WORKSPACE}/R3DTOS-PI5/src"
+          export CUSTOM_PI_OS_PATH="${GITHUB_WORKSPACE}/CustomPiOS/src"
+          export BASE_ZIP_IMG="${GITHUB_WORKSPACE}/base-image-cache/raspios_lite_arm64_latest.img.xz"
+          sudo -E bash "${GITHUB_WORKSPACE}/CustomPiOS/src/build"
 
       # CustomPiOS already unmounts on success; on failure the ERR trap runs unmount_image force.
       # If anything still holds $BASE_MOUNT_PATH (qemu/apt/dpkg), plain umount can fail. Lazy
