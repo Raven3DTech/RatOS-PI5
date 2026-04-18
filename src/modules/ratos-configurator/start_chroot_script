@@ -163,8 +163,7 @@ if mcu_ts.is_file():
 \t\t});"""
     repl = """\t\t\ttry {
 \t\t\t\treturn BoardWithDetectionStatus.parse(b);
-\t\t\t} catch (e) {
-\t\t\t\tconsole.error(`R3DTOS: skipping invalid board definition at ${String((b as { path?: string }).path ?? 'unknown')}:`, e);
+\t\t\t} catch {
 \t\t\t\treturn null;
 \t\t\t}
 \t\t})
@@ -176,6 +175,9 @@ if mcu_ts.is_file():
     else:
         print("mcu.ts: skip (already patched or upstream changed)")
 PATCHPY
+
+# Match project Prettier (heredoc fonts.tsx + patched routers can otherwise fail ESLint during `next build`).
+sudo -u pi bash -lc "cd ${RATOS_CONFIGURATOR_DIR}/src && pnpm exec prettier --write app/fonts.tsx server/routers/printer.ts server/routers/mcu.ts"
 
 # ── Build the Next.js production app ─────────────────────────
 # CI runners are memory-tight; cap Node heap explicitly to reduce OOM during Next build.
