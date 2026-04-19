@@ -16,6 +16,8 @@ mkdir -p "${CONFIG_PARENT}"
 
 TMP_CLONE="$(mktemp -d)"
 trap 'rm -rf "${TMP_CLONE}"' EXIT
+# mktemp -d as root is mode 0700 root:root; git clone as pi cannot create the work tree inside it.
+chown "${BASE_USER}:${BASE_USER}" "${TMP_CLONE}"
 
 echo_green "Fetching RatOS-configurator (${RATOS_CONFIGURATOR_CONFIGURATION_BRANCH}) for configuration/ ..."
 sudo -u "${BASE_USER}" git clone -b "${RATOS_CONFIGURATOR_CONFIGURATION_BRANCH}" --depth 1 \
