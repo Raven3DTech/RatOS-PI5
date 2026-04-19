@@ -41,6 +41,12 @@ createAdHocNetwork()
 {
     echo "Autohotspot by RaspberryConnect.com"
     echo "Creating Hotspot"
+    # Pi OS Bookworm+: NetworkManager owns wlan by default. hostapd cannot start until NM releases it.
+    if command -v nmcli >/dev/null 2>&1 && systemctl is-active --quiet NetworkManager 2>/dev/null; then
+        nmcli -w 15 device disconnect "$wifidev" 2>/dev/null || true
+        nmcli device set "$wifidev" managed no 2>/dev/null || true
+        sleep 2
+    fi
     ip link set dev "$wifidev" down
     ip a add 192.168.50.1/24 brd + dev "$wifidev"
     ip link set dev "$wifidev" up
@@ -59,8 +65,10 @@ createAdHocNetwork()
     fi
     systemctl start dnsmasq
     systemctl start hostapd
-    # We need dhcpcd in host mode for ipv6
-    systemctl restart dhcpcd
+    # dhcpcd + NetworkManager both touching wlan causes flaps; NM-only images skip this.
+    if ! systemctl is-active --quiet NetworkManager 2>/dev/null; then
+        systemctl restart dhcpcd
+    fi
     echo 1 > /proc/sys/net/ipv4/ip_forward
     # echo 1 > /proc/sys/net/ipv6/conf/all/forwarding
 }
@@ -83,6 +91,9 @@ KillHotspot()
     ip addr flush dev "$wifidev"
     ip link set dev "$wifidev" up
     dhcpcd  -n "$wifidev" >/dev/null 2>&1
+    if command -v nmcli >/dev/null 2>&1 && systemctl is-active --quiet NetworkManager 2>/dev/null; then
+        nmcli device set "$wifidev" managed yes 2>/dev/null || true
+    fi
 }
 
 ChkWifiUp()
@@ -186,6 +197,7 @@ NoDevice()
 }
 
 chksys
+rfkill unblock wifi 2>/dev/null || true
 FindSSID
 
 #Create Hotspot or connect to valid wifi networks
