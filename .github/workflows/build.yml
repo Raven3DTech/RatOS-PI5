@@ -22,7 +22,7 @@ jobs:
       - name: Checkout RavenOS PI5
         uses: actions/checkout@v4
         with:
-          path: R3DTOS-PI5
+          path: RAVENOS-PI5
 
       - name: Checkout CustomPiOS
         uses: actions/checkout@v4
@@ -33,7 +33,7 @@ jobs:
       - name: Fail fast on CRLF in RavenOS tree
         run: |
           set -euo pipefail
-          cd "${GITHUB_WORKSPACE}/R3DTOS-PI5"
+          cd "${GITHUB_WORKSPACE}/RAVENOS-PI5"
           # -I skips binary blobs; CRLF breaks bash source, shebangs, visudo, systemd in chroot.
           bad=$(git grep -l -I $'\r' -- . || true)
           if [ -n "${bad}" ]; then
@@ -88,9 +88,9 @@ jobs:
       # `src/image/` (same as `make download-image`) and use `sudo -E` so BASE_ZIP_IMG survives.
       - name: Stage base image into distro image dir
         run: |
-          mkdir -p "${GITHUB_WORKSPACE}/R3DTOS-PI5/src/image"
+          mkdir -p "${GITHUB_WORKSPACE}/RAVENOS-PI5/src/image"
           SRC="${GITHUB_WORKSPACE}/base-image-cache/raspios_lite_arm64_latest.img.xz"
-          DST="${GITHUB_WORKSPACE}/R3DTOS-PI5/src/image/raspios_lite_arm64_latest.img.xz"
+          DST="${GITHUB_WORKSPACE}/RAVENOS-PI5/src/image/raspios_lite_arm64_latest.img.xz"
           test -f "${SRC}"
           cp -f "${SRC}" "${DST}"
           ls -lh "${DST}"
@@ -98,7 +98,7 @@ jobs:
       - name: Build image
         run: |
           sudo modprobe loop
-          export DIST_PATH="${GITHUB_WORKSPACE}/R3DTOS-PI5/src"
+          export DIST_PATH="${GITHUB_WORKSPACE}/RAVENOS-PI5/src"
           export CUSTOM_PI_OS_PATH="${GITHUB_WORKSPACE}/CustomPiOS/src"
           export BASE_ZIP_IMG="${GITHUB_WORKSPACE}/base-image-cache/raspios_lite_arm64_latest.img.xz"
           sudo -E bash "${GITHUB_WORKSPACE}/CustomPiOS/src/build"
@@ -109,7 +109,7 @@ jobs:
       - name: Release image mounts and loop devices
         if: always()
         run: |
-          M="${GITHUB_WORKSPACE}/R3DTOS-PI5/src/workspace/mount"
+          M="${GITHUB_WORKSPACE}/RAVENOS-PI5/src/workspace/mount"
           sync
           if sudo mount 2>/dev/null | grep -qF "${M}"; then
             echo "Lazy-unmounting ${M} ..."
@@ -132,7 +132,7 @@ jobs:
         env:
           SKIP_PISHRINK: ${{ inputs.skip_pishrink }}
         run: |
-          WORKSPACE=R3DTOS-PI5/src/workspace
+          WORKSPACE=RAVENOS-PI5/src/workspace
           VERSION="${{ github.ref_name }}"
           if [ -z "${VERSION}" ] || [ "${VERSION}" = "main" ]; then
             VERSION=$(date +'%Y%m%d')
@@ -191,7 +191,7 @@ jobs:
         id: changelog
         run: |
           TAG="${{ github.ref_name }}"
-          NOTES=$(awk "/^## ${TAG}/,/^## /" R3DTOS-PI5/CHANGELOG.md \
+          NOTES=$(awk "/^## ${TAG}/,/^## /" RAVENOS-PI5/CHANGELOG.md \
                   | grep -v "^## ${TAG}" | grep -v "^## " | sed '/^$/d')
           if [ -z "${NOTES}" ]; then
             NOTES="See CHANGELOG.md for full details."

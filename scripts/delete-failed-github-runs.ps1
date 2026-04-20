@@ -5,11 +5,11 @@
 
 .DESCRIPTION
   Uses GitHub CLI. Run once: gh auth login
-  Default repo: Raven3DTech/R3DTOS-PI5
+  Default repo: Raven3DTech/RAVENOS-PI5
   Deletes runs with status filter: failure, startup_failure, timed_out
 #>
 param(
-  [string]$Repo = "Raven3DTech/R3DTOS-PI5",
+  [string]$Repo = "Raven3DTech/RAVENOS-PI5",
   [int]$Limit = 500,
   [switch]$WhatIf
 )

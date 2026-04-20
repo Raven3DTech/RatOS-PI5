@@ -54,7 +54,7 @@ build: check-deps
 	cd $(SRC_DIR) && sudo bash -x ./build_dist
 	@echo ""
 	@echo "✅ Build complete!"
-	@echo "Image: $(WORKSPACE_DIR)/<clone-folder-name>.img  (e.g. R3DTOS-PI5.img — name matches the parent directory of src/)"
+	@echo "Image: $(WORKSPACE_DIR)/<clone-folder-name>.img  (e.g. RAVENOS-PI5.img — name matches the parent directory of src/)"
 
 clean:
 	@echo "Cleaning workspace..."

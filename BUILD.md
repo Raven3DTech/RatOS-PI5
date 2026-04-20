@@ -1,6 +1,6 @@
 # RavenOS PI5 — Build Guide
 
-**RavenOS PI5** is a **RatOS v2.1.x–class** printer stack (Moonraker, Mainsail, **RavenOS Configurator** from the **[ECOM-EX/RatOS-configurator](https://github.com/ECOM-EX/RatOS-configurator)** fork, modular `~/printer_data/config/RavenOS`, RatOS-derived hotspot) on **Raspberry Pi OS Lite arm64** for **Raspberry Pi 5** (Pi 4 compatible). It is **not** the upstream RatOS CB1 image; it tracks RatOS behaviour where Pi OS allows, with Pi‑5‑specific fixes called out below.
+**RavenOS PI5** is a **RatOS v2.1.x–class** printer stack (Moonraker, Mainsail, **RavenOS Configurator** from the **[Raven3DTech/RatOS-configurator](https://github.com/Raven3DTech/RatOS-configurator)** fork, modular `~/printer_data/config/RavenOS`, RatOS-derived hotspot) on **Raspberry Pi OS Lite arm64** for **Raspberry Pi 5** (Pi 4 compatible). It is **not** the upstream RatOS CB1 image; it tracks RatOS behaviour where Pi OS allows, with Pi‑5‑specific fixes called out below.
 
 This document covers the full build process, troubleshooting, and how to
 customise the image.
@@ -38,7 +38,7 @@ partition is enlarged for the full module stack, and the workspace holds interme
 
 The **`hotspot`** module follows [Rat-OS/RatOS `v2.1.x` `hotspot`](https://github.com/Rat-OS/RatOS/tree/v2.1.x/src/modules/hotspot) (Guy Sheffer / RaspberryConnect.com pattern): **hostapd**, **dnsmasq**, **`autohotspot.service`**, and **`/usr/bin/autohotspotN`**.
 
-- **NetworkManager:** Pi OS Lite **Bookworm+** often uses **NetworkManager** for Wi‑Fi. `autohotspotN` was written around **wpa_supplicant + dhcpcd**. **R3DTOS** extends **`createAdHocNetwork`**: `nmcli device disconnect` + **`managed no`** on `wlan0` before **hostapd**, and skips **`dhcpcd` restart** when NM is active, so the fallback AP can start. **`KillHotspot`** sets **`managed yes`** again when leaving AP mode. If the AP still fails, check **`journalctl -u hostapd -b`** and **`iw dev`** (interface name).
+- **NetworkManager:** Pi OS Lite **Bookworm+** often uses **NetworkManager** for Wi‑Fi. `autohotspotN` was written around **wpa_supplicant + dhcpcd**. **RavenOS PI5** extends **`createAdHocNetwork`**: `nmcli device disconnect` + **`managed no`** on `wlan0` before **hostapd**, and skips **`dhcpcd` restart** when NM is active, so the fallback AP can start. **`KillHotspot`** sets **`managed yes`** again when leaving AP mode. If the AP still fails, check **`journalctl -u hostapd -b`** and **`iw dev`** (interface name).
 - This port **does not blank `/etc/network/interfaces` when `network-manager` is installed** (unlike stock RatOS) to avoid breaking NM-managed installs.
 - **Ethernet interface:** many Pis use **`end0`** instead of **`eth0`**; the module **patches `autohotspotN`** when `end0` exists.
 - Defaults: SSID **`ravenos`**, WPA passphrase **`raspberry`**, channel **`6`** — override via `HOTSPOT_NAME` / `HOTSPOT_PASSWORD` / `HOTSPOT_CHANNEL` in `src/modules/hotspot/config` or `config.local`.
@@ -53,19 +53,19 @@ The **`hotspot`** module follows [Rat-OS/RatOS `v2.1.x` `hotspot`](https://githu
 ```
 ~/
 ├── CustomPiOS/     ← https://github.com/guysoft/CustomPiOS
-└── R3DTOS-PI5/     ← this repo (clone folder; CustomPiOS names `.img` after this folder)
+└── RAVENOS-PI5/     ← this repo (clone folder; CustomPiOS names `.img` after this folder)
 ```
 
 ```bash
 cd ~
 git clone https://github.com/guysoft/CustomPiOS.git
-git clone https://github.com/Raven3DTech/R3DTOS-PI5.git R3DTOS-PI5
+git clone https://github.com/Raven3DTech/RAVENOS-PI5.git RAVENOS-PI5
 ```
 
 ### 2. Download the base Raspberry Pi OS image
 
 ```bash
-cd ~/R3DTOS-PI5
+cd ~/RAVENOS-PI5
 make download-image
 ```
 
@@ -84,7 +84,7 @@ wget -c https://downloads.raspberrypi.org/raspios_lite_arm64_latest \
 This links CustomPiOS scripts into the RavenOS PI5 source tree:
 
 ```bash
-cd ~/R3DTOS-PI5
+cd ~/RAVENOS-PI5
 make update-paths
 ```
 
@@ -104,7 +104,7 @@ Edit `src/config` to change:
 ### 5. Build
 
 ```bash
-cd ~/R3DTOS-PI5
+cd ~/RAVENOS-PI5
 make build
 ```
 
@@ -113,7 +113,7 @@ The build downloads packages inside the chroot.
 
 The finished image will be at:
 ```
-src/workspace/R3DTOS-PI5.img
+src/workspace/RAVENOS-PI5.img
 ```
 
 ---
@@ -122,13 +122,13 @@ src/workspace/R3DTOS-PI5.img
 
 ### Raspberry Pi Imager (Recommended)
 1. Open Raspberry Pi Imager
-2. Choose OS → Use Custom → select `R3DTOS-PI5.img` (or whatever `.img` name matches your clone folder)
+2. Choose OS → Use Custom → select `RAVENOS-PI5.img` (or whatever `.img` name matches your clone folder)
 3. Choose your SD card or NVMe
 4. Write
 
 ### dd (Linux)
 ```bash
-sudo dd if=src/workspace/R3DTOS-PI5.img of=/dev/sdX bs=4M status=progress
+sudo dd if=src/workspace/RAVENOS-PI5.img of=/dev/sdX bs=4M status=progress
 sync
 ```
 
@@ -152,7 +152,7 @@ Match the [RatOS 2.1.x installation](https://os.ratrig.com/docs/installation/) f
 
 ## RatOS printer config tree (`~/printer_data/config/RatOS`)
 
-The image fills `~/printer_data/config/RavenOS` from the **[RavenOS fork `configuration/`](https://github.com/ECOM-EX/RatOS-configurator/tree/v2.1.x/configuration/)** on branch **`v2.1.x`** (same tree the Configurator ships with; periodically merge [Rat-OS/RatOS-configurator](https://github.com/Rat-OS/RatOS-configurator)). The older standalone [RatOS-configuration](https://github.com/Rat-OS/RatOS-configuration) repository is **deprecated** upstream (merged into the configurator; new work targets the configurator repo). That keeps board definitions and templates aligned with the wizard instead of lagging the split repo.
+The image fills `~/printer_data/config/RavenOS` from the **[RavenOS fork `configuration/`](https://github.com/Raven3DTech/RatOS-configurator/tree/v2.1.x/configuration/)** on branch **`v2.1.x`** (same tree the Configurator ships with; periodically merge [Rat-OS/RatOS-configurator](https://github.com/Rat-OS/RatOS-configurator)). The older standalone [RatOS-configuration](https://github.com/Rat-OS/RatOS-configuration) repository is **deprecated** upstream (merged into the configurator; new work targets the configurator repo). That keeps board definitions and templates aligned with the wizard instead of lagging the split repo.
 
 Note the following **compatibility** points versus a stock RatOS image:
 
@@ -302,7 +302,7 @@ Something still has the chroot open (file descriptor, shell cwd, `apt`, `qemu`).
 
 ```bash
 sync
-M=/path/to/R3DTOS-PI5/src/workspace/mount   # adjust to your clone
+M=/path/to/RAVENOS-PI5/src/workspace/mount   # adjust to your clone
 sudo lsof +D "$M" 2>/dev/null | head
 sudo umount -R -l "$M"   # lazy recursive unmount; safe if paths match CustomPiOS
 sudo losetup -D

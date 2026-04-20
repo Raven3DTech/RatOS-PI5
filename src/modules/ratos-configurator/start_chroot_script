@@ -1,6 +1,6 @@
 #!/bin/bash
 # ============================================================
-# RavenOS PI5 — Configurator module (clone ECOM-EX/RatOS-configurator fork; branch v2.1.x)
+# RavenOS PI5 — Configurator module (clone Raven3DTech/RatOS-configurator fork; branch v2.1.x)
 # ============================================================
 set -ex
 

@@ -157,7 +157,7 @@ systemctl is-active --quiet ssh || systemctl start ssh 2>/dev/null || true
 echo "============================================"
 echo "RavenOS PI5 First Boot Complete: $(date)"
 echo "First-run: open http://${NEW_HOSTNAME}.local/ → hardware wizard /configure/wizard/ (printer profile + hardware)."
-echo "After setup: sudo r3dtos-wizard-complete  (then / opens Mainsail). Mainsail early: http://${NEW_HOSTNAME}.local/index.html"
+echo "After setup: finish the hardware wizard in the UI (then / opens Mainsail). Mainsail early: http://${NEW_HOSTNAME}.local/index.html"
 echo "RavenOS Configurator: http://${NEW_HOSTNAME}.local/configure/  |  Wizard: .../configure/wizard/"
 echo "On fallback hotspot Wi-Fi: http://192.168.50.1 (same / → configurator until wizard complete)"
 echo "============================================"

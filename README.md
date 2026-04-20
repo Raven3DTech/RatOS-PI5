@@ -1,6 +1,6 @@
 # RavenOS PI5
 
-**RavenOS PI5** is a **Raspberry Pi OS Lite arm64** image that ships the **RatOS v2.1.x–class** printer stack (Klipper, Moonraker, Mainsail, configurator, hotspot). It is **not** the upstream RatOS image. This repository’s **image build scripts and CustomPiOS modules** are **GPL-3.0** (see **LICENSE**). Bundled upstream projects keep their own licenses: [Klipper](https://github.com/Klipper3d/klipper), [Moonraker](https://github.com/Arksine/moonraker), [Mainsail](https://github.com/mainsail-crew/mainsail), and **RatOS** lineage with the configurator maintained as **[RavenOS fork of RatOS-configurator](https://github.com/ECOM-EX/RatOS-configurator)** (wizard UI and `configuration/` tree under `~/printer_data/config/RavenOS`; upstream [Rat-OS/RatOS-configurator](https://github.com/Rat-OS/RatOS-configurator)). **RatOS** and **RatRig** remain the upstream source of truth for printer configuration patterns; RavenOS exists to run that ecosystem on **official Raspberry Pi** hardware with Pi‑5 / Bookworm adjustments documented in **BUILD.md**.
+**RavenOS PI5** is a **Raspberry Pi OS Lite arm64** image that ships the **RatOS v2.1.x–class** printer stack (Klipper, Moonraker, Mainsail, configurator, hotspot). It is **not** the upstream RatOS image. This repository’s **image build scripts and CustomPiOS modules** are **GPL-3.0** (see **LICENSE**). Bundled upstream projects keep their own licenses: [Klipper](https://github.com/Klipper3d/klipper), [Moonraker](https://github.com/Arksine/moonraker), [Mainsail](https://github.com/mainsail-crew/mainsail), and **RatOS** lineage with the configurator maintained as **[RavenOS fork of RatOS-configurator](https://github.com/Raven3DTech/RatOS-configurator)** (wizard UI and `configuration/` tree under `~/printer_data/config/RavenOS`; upstream [Rat-OS/RatOS-configurator](https://github.com/Rat-OS/RatOS-configurator)). **RatOS** and **RatRig** remain the upstream source of truth for printer configuration patterns; RavenOS exists to run that ecosystem on **official Raspberry Pi** hardware with Pi‑5 / Bookworm adjustments documented in **BUILD.md**.
 
 Built with **CustomPiOS**.
 
@@ -8,7 +8,7 @@ Includes:
 - **Klipper** — 3D printer firmware
 - **Moonraker** — Klipper API server
 - **Mainsail** — Web UI for Klipper
-- **RavenOS Configurator** — board configuration, flashing and provisioning wizard (from **[our RatOS-configurator fork](https://github.com/ECOM-EX/RatOS-configurator)**; upstream [Rat-OS/RatOS-configurator](https://github.com/Rat-OS/RatOS-configurator))
+- **RavenOS Configurator** — board configuration, flashing and provisioning wizard (from **[our RatOS-configurator fork](https://github.com/Raven3DTech/RatOS-configurator)**; upstream [Rat-OS/RatOS-configurator](https://github.com/Rat-OS/RatOS-configurator))
 
 Targets **Raspberry Pi 5** running **Bookworm 64-bit**, but is compatible with Pi 4 as well.
 
@@ -37,17 +37,17 @@ sudo apt-get install -y \
 
 ### 1. Clone this repo and CustomPiOS
 
-Use the folder name **`R3DTOS-PI5`** so the CustomPiOS output image is named **`R3DTOS-PI5.img`** (the name matches the parent directory of `src/`).
+Use the folder name **`RAVENOS-PI5`** so the CustomPiOS output image is named **`RAVENOS-PI5.img`** (the name matches the parent directory of `src/`).
 
 ```bash
-git clone https://github.com/Raven3DTech/R3DTOS-PI5.git R3DTOS-PI5
+git clone https://github.com/Raven3DTech/RAVENOS-PI5.git RAVENOS-PI5
 git clone https://github.com/guysoft/CustomPiOS.git
 ```
 
 ### 2. Download the base Raspberry Pi OS image
 
 ```bash
-cd R3DTOS-PI5/src/image
+cd RAVENOS-PI5/src/image
 wget -c https://downloads.raspberrypi.org/raspios_lite_arm64_latest -O raspios_lite_arm64_latest.img.xz
 ```
 
@@ -56,21 +56,21 @@ wget -c https://downloads.raspberrypi.org/raspios_lite_arm64_latest -O raspios_l
 ### 3. Update CustomPiOS paths
 
 ```bash
-cd R3DTOS-PI5/src
+cd RAVENOS-PI5/src
 ../../CustomPiOS/src/update-custompios-paths
 ```
 
 ### 4. Build the image
 
 ```bash
-cd R3DTOS-PI5/src
+cd RAVENOS-PI5/src
 sudo modprobe loop
 sudo bash -x ./build_dist
 ```
 
 The finished image will be at:
 ```
-R3DTOS-PI5/src/workspace/R3DTOS-PI5.img
+RAVENOS-PI5/src/workspace/RAVENOS-PI5.img
 ```
 
 *(If your clone folder has a different name, the `.img` filename matches that folder.)*
@@ -80,7 +80,7 @@ R3DTOS-PI5/src/workspace/R3DTOS-PI5.img
 Use **Raspberry Pi Imager** (recommended) and select the `.img` file, or:
 
 ```bash
-sudo dd if=R3DTOS-PI5.img of=/dev/sdX bs=4M status=progress
+sudo dd if=RAVENOS-PI5.img of=/dev/sdX bs=4M status=progress
 sync
 ```
 
@@ -147,8 +147,8 @@ Each component can be updated independently via Moonraker's update manager
 | Klipper | https://github.com/Klipper3d/klipper |
 | Moonraker | https://github.com/Arksine/moonraker |
 | Mainsail | https://github.com/mainsail-crew/mainsail |
-| Configurator | https://github.com/ECOM-EX/RatOS-configurator (fork; upstream Rat-OS) |
-| ratos-configuration (module) | Fills `~/printer_data/config/RavenOS` from [fork `configuration/`](https://github.com/ECOM-EX/RatOS-configurator/tree/v2.1.x/configuration/) @ `v2.1.x` (legacy [RatOS-configuration](https://github.com/Rat-OS/RatOS-configuration) repo is upstream-deprecated) |
+| Configurator | https://github.com/Raven3DTech/RatOS-configurator (fork; upstream Rat-OS) |
+| ratos-configuration (module) | Fills `~/printer_data/config/RavenOS` from [fork `configuration/`](https://github.com/Raven3DTech/RatOS-configurator/tree/v2.1.x/configuration/) @ `v2.1.x` (legacy [RatOS-configuration](https://github.com/Rat-OS/RatOS-configuration) repo is upstream-deprecated) |
 | Crowsnest | https://github.com/mainsail-crew/crowsnest |
 | Sonar | https://github.com/mainsail-crew/sonar |
 | moonraker-timelapse | https://github.com/mainsail-crew/moonraker-timelapse |
