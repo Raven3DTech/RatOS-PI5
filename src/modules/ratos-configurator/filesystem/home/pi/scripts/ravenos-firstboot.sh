@@ -50,28 +50,18 @@ systemctl mask ModemManager 2>/dev/null || true
 echo "[2/7] Expanding filesystem..."
 raspi-config --expand-rootfs || true
 
-# ── Set unique hostname ───────────────────────────────────────
-# Appends last 4 chars of Pi serial for uniqueness on networks with multiple RavenOS units.
+# ── Set hostname ──────────────────────────────────────────────
+# Plain "ravenos" so http://ravenos.local/ resolves on every fresh flash — matches the
+# RatOS first-boot UX. mDNS (Avahi) auto-appends "-2"/"-3" on the rare LAN with multiple
+# RavenOS Pis, so collisions self-resolve without baking serial suffixes into the image.
+# The user can rename via the Configurator's hostname step, which persists through
+# hostnamectl + /etc/hosts rewrite just like upstream.
 echo "[3/7] Setting hostname..."
-SERIAL=$(grep -m1 '^Serial' /proc/cpuinfo 2>/dev/null | awk '{print $3}' | tail -c 5 | head -c 4)
-if [ -z "${SERIAL}" ] || [ "${SERIAL}" = "0000" ]; then
-    # Pi 5 / newer kernels: full serial in device tree (hex string)
-    DT_SERIAL=$(tr -d '\0' </proc/device-tree/serial-number 2>/dev/null || true)
-    if [ -n "${DT_SERIAL}" ]; then
-        SERIAL=$(echo -n "${DT_SERIAL}" | tail -c 4)
-    fi
-fi
-if [ -n "${SERIAL}" ] && [ "${SERIAL}" != "0000" ]; then
-    NEW_HOSTNAME="${DEFAULT_HOST}-${SERIAL}"
-else
-    NEW_HOSTNAME="${DEFAULT_HOST}"
-fi
+NEW_HOSTNAME="${DEFAULT_HOST}"
 
 echo "${NEW_HOSTNAME}" > /etc/hostname
-sed -i "s/${DEFAULT_HOST}/${NEW_HOSTNAME}/g" /etc/hosts
-# Must match running kernel hostname: sudo resolves `gethostname()` via NSS. If we only
-# rewrite /etc/hosts and not the live name, the baked-in hostname disappears from hosts while the
-# kernel still reports it → "unable to resolve host" and NOPASSWD sudo (iw, scripts) fails.
+# sudo resolves gethostname() via NSS: kernel name, /etc/hosts and /etc/hostname must agree
+# or NOPASSWD sudo (iw, scripts) starts failing with "unable to resolve host".
 hostnamectl set-hostname "${NEW_HOSTNAME}" 2>/dev/null || hostname "${NEW_HOSTNAME}"
 
 # Update moonraker.conf with new hostname
@@ -117,6 +107,9 @@ systemctl restart ssh 2>/dev/null || systemctl start ssh 2>/dev/null || true
 echo "[5/7] Setting file ownership..."
 mkdir -p /home/pi/printer_data/ravenos /home/pi/printer_data/logs /home/pi/timelapse
 touch /home/pi/printer_data/logs/sonar.log
+# nginx (www-data) must be able to traverse /home/pi to serve /home/pi/mainsail.
+# Without execute on the home directory, Mainsail routes return HTTP 500.
+chmod 755 /home/pi
 chown -R pi:pi /home/pi/printer_data
 chown -R pi:pi /home/pi/timelapse
 chown -R pi:pi /home/pi/configurator

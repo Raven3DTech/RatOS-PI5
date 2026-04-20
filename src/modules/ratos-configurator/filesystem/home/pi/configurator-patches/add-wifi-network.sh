@@ -108,36 +108,134 @@ ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev
 update_config=1
 __EOF
 
-# ── RavenOS PI5: NetworkManager (Bookworm) ────────────────────────
+# ── RavenOS PI5: NetworkManager (Bookworm) ────────────────────────────
+# Design:
+#   1. SYNCHRONOUSLY create the NM Wi-Fi profile on disk with autoconnect=yes.
+#      Writing to /etc/NetworkManager/system-connections/ is a local filesystem
+#      op — since wlan0 is currently "unmanaged" (under hostapd for the AP),
+#      NM will NOT auto-activate yet. No disruption to the running AP.
+#   2. Disable autohotspot.service so it does not race NM for wlan0 on the
+#      next boot. The periodic AP-guard (ravenos-nm-wlan-ap-guard.timer)
+#      still re-invokes /usr/bin/autohotspotN if Wi-Fi later becomes orphaned.
+#   3. Schedule a detached systemd-run unit to do the *live* transition
+#      (stop AP, hand wlan0 to NM, activate the ratos-wifi profile) after a
+#      short grace so the tRPC 200 and the follow-up hostname/reboot round
+#      trips can complete over the still-up AP.
+#
+# If the user reboots before the deferred job fires: NO HARM. The profile is
+# already on disk, autohotspot is disabled for next boot, so when NM starts
+# it auto-connects to the user's Wi-Fi. Previously this was the ONE thing
+# that caused the "Pi never joined my Wi-Fi" bug — the deferred job used to
+# be the *only* thing that created the profile.
 if command -v nmcli >/dev/null 2>&1 && systemctl is-active --quiet NetworkManager 2>/dev/null; then
-	echo "RavenOS PI5: Applying Wi-Fi via NetworkManager (stopping fallback AP if active)..."
-	systemctl stop hostapd 2>/dev/null || true
-	systemctl stop dnsmasq 2>/dev/null || true
 	WLAN=$(iw dev 2>/dev/null | awk '$1 == "Interface" { print $2; exit }')
 	if [ -z "${WLAN}" ]; then
 		echo "No wireless interface found (iw dev)."
 		exit 1
 	fi
+
+	# Safe, non-disruptive prep (does not kill the AP):
 	iw reg set "${COUNTRY}" 2>/dev/null || true
-	nmcli networking on 2>/dev/null || true
-	nmcli radio wifi on 2>/dev/null || true
-	nmcli device set "${WLAN}" managed yes 2>/dev/null || true
-	nmcli device disconnect "${WLAN}" 2>/dev/null || true
-	sleep 2
+
+	LOG_FILE="/var/log/ravenos-wifi-apply.log"
+
+	# ─── Step 1: create/refresh the NM profile SYNCHRONOUSLY ─────────
+	# Delete any stale profile so re-runs don't accumulate duplicates.
 	nmcli connection delete ratos-wifi 2>/dev/null || true
-	set +e
-	if [ "${HIDDEN}" = "hidden" ]; then
-		nmcli -w 120 device wifi connect "${SSID}" password "${PASS}" ifname "${WLAN}" name ratos-wifi hidden yes
-	else
-		nmcli -w 120 device wifi connect "${SSID}" password "${PASS}" ifname "${WLAN}" name ratos-wifi
+
+	# Build the `nmcli connection add` invocation. For an open network we
+	# skip the security fields entirely (NM defaults to no security).
+	NMCLI_ADD_ARGS=(
+		connection add
+		type wifi
+		con-name ratos-wifi
+		ifname "${WLAN}"
+		ssid "${SSID}"
+		connection.autoconnect yes
+		connection.autoconnect-priority 50
+		connection.autoconnect-retries 0   # 0 = infinite retries
+		ipv4.method auto
+		ipv6.method auto
+	)
+	if [ -n "${PASS}" ]; then
+		NMCLI_ADD_ARGS+=(
+			wifi-sec.key-mgmt wpa-psk
+			wifi-sec.psk "${PASS}"
+		)
 	fi
-	NM_EXIT=$?
-	set -e
-	if [ "${NM_EXIT}" -ne 0 ]; then
-		echo "nmcli failed to join Wi-Fi (exit ${NM_EXIT}). Check SSID/password and range."
+	if [ "${HIDDEN}" = "hidden" ]; then
+		NMCLI_ADD_ARGS+=(wifi.hidden yes)
+	fi
+
+	if ! nmcli "${NMCLI_ADD_ARGS[@]}" >/dev/null 2>"${LOG_FILE}.err"; then
+		echo "nmcli failed to create ratos-wifi profile. stderr:" >&2
+		cat "${LOG_FILE}.err" >&2 || true
+		rm -f "${LOG_FILE}.err"
+		echo "Invalid wifi credentials"
 		exit 1
 	fi
-	echo "RavenOS PI5: Wi-Fi profile 'ratos-wifi' activated. Reconnect your PC to the printer on the LAN if needed."
+	rm -f "${LOG_FILE}.err"
+	echo "RavenOS PI5: NM profile 'ratos-wifi' created (autoconnect=yes) at /etc/NetworkManager/system-connections/."
+
+	# ─── Step 2: make sure autohotspot won't race NM on next boot ────
+	# The AP-guard script still calls autohotspotN on demand when wlan is
+	# orphaned, so failure recovery remains intact.
+	systemctl disable autohotspot.service 2>/dev/null || true
+
+	# ─── Step 3: schedule the live transition (best-effort, cancelable by reboot) ──
+	if ! command -v systemd-run >/dev/null 2>&1; then
+		echo "systemd-run not available; skipping live transition — reboot to apply."
+		exit 0
+	fi
+	UNIT="ravenos-wifi-apply-$(date +%s%N)"
+	systemd-run \
+		--no-block \
+		--quiet \
+		--unit="${UNIT}" \
+		--setenv=RV_WLAN="${WLAN}" \
+		--setenv=RV_LOG="${LOG_FILE}" \
+		/bin/bash -c '
+			exec >>"${RV_LOG}" 2>&1
+			echo "=== ravenos-wifi-apply $(date -Iseconds) iface=${RV_WLAN} ==="
+			# After wifi.join returns the UI still needs hostname + reboot
+			# round-trips on the same AP. Give that a generous window.
+			sleep 45
+			# AP teardown + hand wlan to NM, then activate ratos-wifi profile.
+			systemctl stop hostapd 2>/dev/null || true
+			systemctl stop dnsmasq 2>/dev/null || true
+			nmcli networking on 2>/dev/null || true
+			nmcli radio wifi on 2>/dev/null || true
+			nmcli device set "${RV_WLAN}" managed yes 2>/dev/null || true
+			sleep 2
+			nmcli -w 120 connection up ratos-wifi ifname "${RV_WLAN}"
+			NM_EXIT=$?
+			echo "nmcli up ratos-wifi exit: ${NM_EXIT}"
+			if [ "${NM_EXIT}" -ne 0 ]; then
+				echo "Wi-Fi join failed. Restoring RavenOS hotspot on ${RV_WLAN}..."
+				nmcli device disconnect "${RV_WLAN}" 2>/dev/null || true
+				nmcli device set "${RV_WLAN}" managed no 2>/dev/null || true
+				sleep 2
+				ip link set dev "${RV_WLAN}" down 2>/dev/null || true
+				ip addr flush dev "${RV_WLAN}" 2>/dev/null || true
+				ip addr add 192.168.50.1/24 brd + dev "${RV_WLAN}" 2>/dev/null || true
+				ip link set dev "${RV_WLAN}" up
+				# Re-enable autohotspot so the user has the full fallback next reboot.
+				systemctl enable autohotspot.service 2>/dev/null || true
+				systemctl start dnsmasq 2>/dev/null || true
+				systemctl start hostapd 2>/dev/null || true
+				echo 1 > /proc/sys/net/ipv4/ip_forward 2>/dev/null || true
+				sleep 2
+				if systemctl is-active --quiet hostapd 2>/dev/null; then
+					echo "RavenOS hotspot: UP (reconnect your device to RavenOS and retry)."
+				else
+					echo "RavenOS hotspot: FAILED to start — check journalctl -u hostapd."
+				fi
+			fi
+			exit "${NM_EXIT}"
+		'
+
+	echo "RavenOS PI5: Wi-Fi apply scheduled via ${UNIT}."
+	echo "Profile already on disk — Pi will auto-join on next boot regardless."
 	exit 0
 fi
 

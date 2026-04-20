@@ -1,33 +1,38 @@
 #!/bin/sh
-# RavenOS PI5 — set nginx routing for "/" based on wired Ethernet carrier.
-# - end0/eth0 link up  → Mainsail SPA (try_files)
-# - no wired link      → redirect "/" to RavenOS Configurator (Wi-Fi / hotspot / wizard)
-# Called from: nginx ExecStartPre, NetworkManager dispatcher (link up/down).
+# RavenOS PI5 — set nginx routing for "/" based on wizard-complete state.
+#
+# Matches the upstream RatOS UX:
+#   - Pre-setup (no marker file)   → "/" redirects to /configure/ (wizard/Wi-Fi)
+#   - Post-setup (marker present)  → "/" serves Mainsail SPA (try_files)
+#
+# The marker is written by the Configurator at the end of its hardware wizard
+# (see the wizard-complete step). It deliberately lives on printer_data (user
+# partition) so that reflashing or re-running the wizard resets the UX.
+#
+# Called from:
+#   - nginx ExecStartPre (so every reload picks up the current state)
+#   - NetworkManager dispatcher on link up/down (cheap no-op if state unchanged)
+#   - the Configurator itself, with --reload, right after writing the marker
 
 set -u
 
 STATE_DIR=/var/lib/ravenos
 CONF="${STATE_DIR}/nginx-mainsail-root.conf"
+MARKER=/home/pi/printer_data/ravenos/wizard-complete
 mkdir -p "${STATE_DIR}"
 
-eth_up=0
-for dev in end0 eth0; do
-	c="/sys/class/net/${dev}/carrier"
-	if [ -r "${c}" ] && [ "$(cat "${c}" 2>/dev/null)" = "1" ]; then
-		eth_up=1
-		break
-	fi
-done
-
-if [ "${eth_up}" = "1" ]; then
+if [ -f "${MARKER}" ]; then
 	cat >"${CONF}" <<'EOF'
+# Wizard complete: http://<host>/ serves Mainsail.
 location / {
     try_files $uri $uri/ /index.html;
 }
 EOF
 else
 	cat >"${CONF}" <<'EOF'
-# No Ethernet carrier: send http://<host>/ to Configurator (wizard, Wi-Fi setup).
+# Pre-setup: http://<host>/ sends users to the Configurator wizard.
+# Mainsail stays reachable at /index.html for users who want to run Machine-page
+# updates before configuring their printer (mirrors RatOS flow).
 location = / {
     return 302 /configure/;
 }

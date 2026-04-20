@@ -25,3 +25,7 @@ pi ALL=(ALL) NOPASSWD: /bin/systemctl start klipper
 # Allow shutdown and reboot
 pi ALL=(ALL) NOPASSWD: /sbin/shutdown
 pi ALL=(ALL) NOPASSWD: /sbin/reboot
+
+# First-boot UX: after the wizard saves a valid config, the Configurator flips "/"
+# from the Configurator wizard over to Mainsail via the nginx root-router helper.
+pi ALL=(ALL) NOPASSWD: /usr/local/bin/ravenos-update-nginx-root.sh --reload

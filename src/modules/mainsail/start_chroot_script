@@ -51,9 +51,18 @@ cat > ${MAINSAIL_DIR}/config.json << 'EOF'
     "instancesDB": "moonraker",
     "instances": [
         {
+            "name": "RavenOS",
             "hostname": "",
             "port": 80,
             "path": "/"
+        }
+    ],
+    "customNavigation": [
+        {
+            "title": "Configurator",
+            "href": "/configure/",
+            "target": "_self",
+            "position": 82
         }
     ]
 }
@@ -72,7 +81,6 @@ unpack /filesystem/root /
 # ── Root URL: Ethernet → Mainsail, no cable → Configurator ───
 mkdir -p /var/lib/ravenos
 chmod +x /usr/local/bin/ravenos-update-nginx-root.sh
-chmod +x /etc/NetworkManager/dispatcher.d/99-ravenos-nginx-root
 /usr/local/bin/ravenos-update-nginx-root.sh
 systemctl daemon-reload || true
 
